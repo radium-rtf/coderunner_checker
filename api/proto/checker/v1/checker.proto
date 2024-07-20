@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package checker;
+
+option go_package = "coderunner_checker/pkg/grpc/checker;checker";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    version: "1.0"
+    title: "radium checker"
+  }
+};
+
+service Checker {
+
+}
