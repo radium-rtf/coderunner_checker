@@ -1,0 +1,9 @@
+server:
+  env: dev
+  address: 8081
+
+sandox:
+  user: root
+  uuid: 0
+  work_dir: /sandbox
+  host: unix:///var/run/docker.sock

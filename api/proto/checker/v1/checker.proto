@@ -4,20 +4,56 @@ package checker;
 
 option go_package = "coderunner_checker/pkg/grpc/checker;checker";
 
-import "google/api/annotations.proto";
-import "google/api/field_behavior.proto";
-import "protoc-gen-openapiv2/options/annotations.proto";
-import "validate/validate.proto";
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
-option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
-  info: {
-    version: "1.0"
-    title: "radium checker"
+message TestRequest {
+  string lang = 1;
+  string user_code = 2;
+  int64 timeout = 3; // in seconds
+  int64 memory_limit = 4; // in bytes
+  bool full_info_wa = 5;
+}
+
+message TestCase {
+  string stdin = 1;
+  string stdout = 2;
+}
+
+message ArrayTestsRequest {
+  repeated TestCase tests = 1;
+  TestRequest request = 2;
+}
+
+message FileTestsRequest {
+  string url = 1;
+  TestRequest request = 2;
+}
+
+enum Status {
+  STATUS_ERROR = 0;
+  STATUS_SUCCESS = 1;
+  STATUS_WRONG_ANSWER = 2;
+  STATUS_TIMEOUT = 3;
+  STATUS_OOM_KILLED = 4;
+}
+
+message TestResponse {
+  message WrongAnswer {
+    string input = 1;
+    string actual = 2;
+    string expected = 3;
   }
-};
+
+  Status status = 1;
+  int64 number = 2;
+  google.protobuf.Duration duration = 3;
+  oneof message {
+    string text = 4;
+    WrongAnswer wrong_answer = 5;
+  }
+}
 
 service Checker {
-
+  rpc Check(ArrayTestsRequest) returns (stream TestResponse) {};
+  rpc CheckURL(FileTestsRequest) returns (stream TestResponse) {};
 }
