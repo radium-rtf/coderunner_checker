@@ -1,20 +1,21 @@
 package domain
 
-type Config struct {
-	ServerConfig  `yaml:"server"`
-	SandboxConfig `yaml:"sandbox"`
-}
-
 // possible env values
 const (
-	DevEnv  = "dev"
-	ProdEnv = "prod"
-	TestEnv = "test"
+	LocalEnv = "local"
+	DevEnv   = "dev"
+	ProdEnv  = "prod"
+	TestEnv  = "test"
 )
 
+type Config struct {
+	Server  ServerConfig  `yaml:"server" env-required:"true"`
+	Sandbox SandboxConfig `yaml:"sandbox" env-required:"true"`
+	Env     string        `yaml:"env" env-required:"true"`
+}
+
 type ServerConfig struct {
-	Env     string `yaml:"env" env-required:"true"`
-	Address string `yaml:"address" env-required:"true"`
+	Port int `yaml:"port" env-required:"true"`
 }
 
 type Rule struct {
@@ -26,8 +27,8 @@ type Rule struct {
 type Rules map[string]Rule // Key is programming language, value is struct with specified launch rules
 
 type SandboxConfig struct {
-	User    string `yaml:"env" env-required:"true"`
-	UUID    int    `yaml:"address" env-required:"true"`
+	User    string `yaml:"user" env-required:"true"`
+	UUID    int    `yaml:"uuid" env-required:"true"`
 	WorkDir string `yaml:"work_dir" env-required:"true"`
 	Host    string `yaml:"host" env-required:"true"`
 	Rules   Rules  `yaml:"rules" env-required:"true"`

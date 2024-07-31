@@ -3,32 +3,37 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/radium-rtf/coderunner_checker/internal/app"
 	"github.com/radium-rtf/coderunner_checker/internal/config"
-	"github.com/radium-rtf/coderunner_checker/internal/checker/grpc"
-	serverutils "github.com/radium-rtf/coderunner_checker/internal/utils/server"
-	checkergrpc "github.com/radium-rtf/coderunner_checker/pkg/api/checker/v1"
-	"google.golang.org/grpc"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	server := grpc.NewServer()
-
-	checker, err := checker.NewChecker(cfg.SandboxConfig)
+	app, err := app.New(cfg)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	checkergrpc.RegisterCheckerServer(server, checker)
+	// Gracefull shutdown
+	go func(cancel context.CancelFunc) {
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 
-	err = serverutils.Run(ctx, server, cfg.ServerConfig)
+		<-stop
+		cancel()
+	}(cancel)
+
+	err = app.Server.Run(ctx)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -1,50 +1,30 @@
-package checker
+package checkergrpc
 
 import (
-	"github.com/docker/docker/client"
-	coderunner "github.com/radium-rtf/coderunner_lib"
-	libConfig "github.com/radium-rtf/coderunner_lib/config"
-
 	"github.com/radium-rtf/coderunner_checker/internal/domain"
-	"github.com/radium-rtf/coderunner_checker/internal/tester"
 	checkerutils "github.com/radium-rtf/coderunner_checker/internal/utils/checker"
 	"github.com/radium-rtf/coderunner_checker/pkg/api/checker/v1"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-type Checker struct {
+type CheckerAPI struct {
 	checker.UnimplementedCheckerServer
 
-	client *coderunner.Runner
-	rules  domain.Rules
+	checkerSrv domain.CheckerSrv
 }
 
-func NewChecker(cfg domain.SandboxConfig) (*Checker, error) {
-	libCfg := libConfig.NewConfig(
-		libConfig.WithUID(cfg.UUID),
-		libConfig.WithUser(cfg.User),
-		libConfig.WithWorkDir(cfg.WorkDir),
-	)
-
-	client, err := coderunner.NewRunner(libCfg, client.WithHost(cfg.Host))
-	if err != nil {
-		return nil, err
-	}
-
-	checker := &Checker{
-		client: client,
-		rules:  cfg.Rules,
-	}
-	return checker, nil
+func Register(server *grpc.Server, checkerSrv domain.CheckerSrv) {
+	checker.RegisterCheckerServer(server, &CheckerAPI{checkerSrv: checkerSrv})
 }
 
-func (c *Checker) Check(in *checker.ArrayTestsRequest, stream checker.Checker_CheckServer) error {
-	tester := tester.NewTester(c.client, in.Request, c.rules[in.Request.Lang])
+func (c *CheckerAPI) Check(in *checker.ArrayTestsRequest, stream checker.Checker_CheckServer) error {
+	sandboxInfo := c.checkerSrv.GetSandbox(in.Request)
 
 	for i, test := range in.Tests {
-		testInfo, err := tester.RunTest(stream.Context(), test)
+		testInfo, err := c.checkerSrv.RunTest(stream.Context(), sandboxInfo, test)
 		if err != nil {
 			return status.Errorf(codes.Internal, "test %d: %v", i+1, err)
 		}
@@ -64,7 +44,7 @@ func (c *Checker) Check(in *checker.ArrayTestsRequest, stream checker.Checker_Ch
 	return nil
 }
 
-func (c *Checker) CheckURL(in *checker.FileTestsRequest, stream checker.Checker_CheckURLServer) error {
+func (c *CheckerAPI) CheckURL(in *checker.FileTestsRequest, stream checker.Checker_CheckURLServer) error {
 	// req, err := http.NewRequest("GET", in.Url, nil)
 	// if err != nil {
 	// 	return nil, status.Errorf(codes.Internal, "cant create request")

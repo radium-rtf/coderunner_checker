@@ -51,7 +51,7 @@ func setResponseWA(res *checker.TestResponse, testInfo *domain.TestInfo, fullInf
 }
 
 func setResponseUnknown(res *checker.TestResponse, testInfo *domain.TestInfo) {
-	res.Status = checker.Status_STATUS_ERROR
+	res.Status = checker.Status_STATUS_UNKNOWN
 	res.Message = &checker.TestResponse_Text{
 		Text: testInfo.Logs.StdErr,
 	}

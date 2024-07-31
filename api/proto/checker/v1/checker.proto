@@ -30,7 +30,7 @@ message FileTestsRequest {
 }
 
 enum Status {
-  STATUS_ERROR = 0;
+  STATUS_UNKNOWN = 0;
   STATUS_SUCCESS = 1;
   STATUS_WRONG_ANSWER = 2;
   STATUS_TIMEOUT = 3;
