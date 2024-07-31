@@ -5,12 +5,23 @@ package checker;
 option go_package = "coderunner_checker/pkg/grpc/checker;checker";
 
 import "google/protobuf/duration.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    version: "1.0"
+    title: "radium checker"
+  }
+};
 
 message TestRequest {
   string lang = 1;
   string user_code = 2;
-  int64 timeout = 3; // in seconds
-  int64 memory_limit = 4; // in bytes
+  google.protobuf.Duration timeout = 3;
+  int64 memory_limit_bytes = 4;
   bool full_info_wa = 5;
 }
 
@@ -54,6 +65,16 @@ message TestResponse {
 }
 
 service Checker {
-  rpc Check(ArrayTestsRequest) returns (stream TestResponse) {};
-  rpc CheckURL(FileTestsRequest) returns (stream TestResponse) {};
+  rpc Check(ArrayTestsRequest) returns (stream TestResponse) {
+    option (google.api.http) = {
+      post: "/v1/check"
+      body: "*"
+    };
+  };
+  rpc CheckURL(FileTestsRequest) returns (stream TestResponse) {
+    option (google.api.http) = {
+      post: "/v1/check-url"
+      body: "*"
+    };
+  };
 }

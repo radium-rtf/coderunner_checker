@@ -7,6 +7,6 @@ import (
 )
 
 type CheckerSrv interface {
-	GetSandbox(*checker.TestRequest) *SandboxInfo
-	RunTest(context.Context, *SandboxInfo, *checker.TestCase) (*TestInfo, error)
+	Closer
+	RunTests(context.Context, *checker.TestRequest, []*checker.TestCase) <-chan *TestResult
 }

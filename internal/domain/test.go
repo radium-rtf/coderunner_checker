@@ -7,5 +7,12 @@ import (
 
 type TestInfo struct {
 	info.Info
-	Test *checker.TestCase
+	Test    *checker.TestCase
+	Success bool
+}
+
+type TestResult struct {
+	Info   *TestInfo
+	Error  error
+	Number int64
 }

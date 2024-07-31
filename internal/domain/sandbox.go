@@ -11,10 +11,10 @@ const (
 )
 
 type SandboxInfo struct {
-	Limits   *limit.Limits
-	Cmd      string
-	UserCode string
-	Profile  profile.Profile
-	Rule     Rule
-	Client   *coderunner.Runner
+	Limits  *limit.Limits
+	Cmd     string
+	Code    string
+	Profile profile.Profile
+	Rule    Rule
+	Client  *coderunner.Runner
 }

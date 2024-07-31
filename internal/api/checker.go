@@ -1,13 +1,11 @@
-package checkergrpc
+package api
 
 import (
 	"github.com/radium-rtf/coderunner_checker/internal/domain"
-	checkerutils "github.com/radium-rtf/coderunner_checker/internal/utils/checker"
 	"github.com/radium-rtf/coderunner_checker/pkg/api/checker/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 type CheckerAPI struct {
@@ -16,28 +14,23 @@ type CheckerAPI struct {
 	checkerSrv domain.CheckerSrv
 }
 
-func Register(server *grpc.Server, checkerSrv domain.CheckerSrv) {
+func RegisterChecker(server *grpc.Server, checkerSrv domain.CheckerSrv) {
 	checker.RegisterCheckerServer(server, &CheckerAPI{checkerSrv: checkerSrv})
 }
 
 func (c *CheckerAPI) Check(in *checker.ArrayTestsRequest, stream checker.Checker_CheckServer) error {
-	sandboxInfo := c.checkerSrv.GetSandbox(in.Request)
+	results := c.checkerSrv.RunTests(stream.Context(), in.Request, in.Tests)
 
-	for i, test := range in.Tests {
-		testInfo, err := c.checkerSrv.RunTest(stream.Context(), sandboxInfo, test)
-		if err != nil {
-			return status.Errorf(codes.Internal, "test %d: %v", i+1, err)
+	for result := range results {
+		if result.Error != nil {
+			return status.Errorf(codes.Internal, "test %d: %v", result.Number, result.Error)
 		}
 
-		res := &checker.TestResponse{
-			Number:   int64(i + 1),
-			Duration: durationpb.New(testInfo.Time.Diff()),
-		}
-		checkerutils.SetResponseInfo(res, testInfo, in.Request.FullInfoWa)
+		res := GetResponse(result, in.Request.FullInfoWa)
 
-		err = stream.Send(res)
+		err := stream.Send(res)
 		if err != nil {
-			return status.Errorf(codes.Internal, "test %d: %v", i+1, err)
+			return status.Errorf(codes.Internal, "test %d: %v", result.Number, err)
 		}
 	}
 

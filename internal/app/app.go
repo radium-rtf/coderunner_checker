@@ -5,7 +5,7 @@ import (
 	"os"
 
 	appgrpc "github.com/radium-rtf/coderunner_checker/internal/app/grpc"
-	"github.com/radium-rtf/coderunner_checker/internal/domain"
+	"github.com/radium-rtf/coderunner_checker/internal/config"
 	checkersrv "github.com/radium-rtf/coderunner_checker/internal/services/checker"
 )
 
@@ -13,7 +13,7 @@ type App struct {
 	Server *appgrpc.App
 }
 
-func New(cfg *domain.Config) (*App, error) {
+func New(cfg *config.Config) (*App, error) {
 	checkerSrv, err := checkersrv.NewCheckerSrv(cfg.Sandbox)
 	if err != nil {
 		return nil, err
@@ -34,13 +34,13 @@ func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 
 	switch env {
-	case domain.LocalEnv:
+	case config.LocalEnv:
 		log = slog.New(slog.Default().Handler())
-	case domain.DevEnv:
+	case config.DevEnv:
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 		)
-	case domain.ProdEnv:
+	case config.ProdEnv:
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)

@@ -12,18 +12,20 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/radium-rtf/coderunner_checker/internal/api"
+	"github.com/radium-rtf/coderunner_checker/internal/config"
 	"github.com/radium-rtf/coderunner_checker/internal/domain"
-	checkergrpc "github.com/radium-rtf/coderunner_checker/internal/grpc/checker"
 )
 
 type App struct {
-	log        *slog.Logger
-	server *grpc.Server
-	cfg        domain.ServerConfig
+	log     *slog.Logger
+	server  *grpc.Server
+	cfg     config.ServerConfig
+	toClose []domain.Closer
 }
 
 // New creates new gRPC server app.
-func New(log *slog.Logger, cfg domain.ServerConfig, checkerSrv domain.CheckerSrv) *App {
+func New(log *slog.Logger, cfg config.ServerConfig, checkerSrv domain.CheckerSrv) *App {
 	loggingOpts := []logging.Option{
 		logging.WithLogOnEvents(
 			logging.PayloadReceived, logging.PayloadSent,
@@ -43,12 +45,13 @@ func New(log *slog.Logger, cfg domain.ServerConfig, checkerSrv domain.CheckerSrv
 		logging.UnaryServerInterceptor(InterceptorLogger(log), loggingOpts...),
 	))
 
-	checkergrpc.Register(server, checkerSrv)
+	api.RegisterChecker(server, checkerSrv)
 
 	return &App{
-		log:        log,
-		server: server,
-		cfg:        cfg,
+		log:     log,
+		server:  server,
+		cfg:     cfg,
+		toClose: []domain.Closer{checkerSrv},
 	}
 }
 
@@ -68,6 +71,12 @@ func (a *App) Run(ctx context.Context) error {
 	go func(ctx context.Context) {
 		<-ctx.Done()
 		a.server.GracefulStop()
+		for _, close := range a.toClose {
+			err := close.Close()
+			if err != nil {
+				a.log.Error(err.Error())
+			}
+		}
 		a.log.Info("grpc server stopped")
 	}(ctx)
 

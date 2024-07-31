@@ -3,15 +3,16 @@ package checkersrv
 import (
 	"context"
 	"fmt"
-	"time"
 
 	coderunner "github.com/radium-rtf/coderunner_lib"
 	libConfig "github.com/radium-rtf/coderunner_lib/config"
 	"github.com/radium-rtf/coderunner_lib/file"
+	"github.com/radium-rtf/coderunner_lib/info"
 	"github.com/radium-rtf/coderunner_lib/limit"
 	"github.com/radium-rtf/coderunner_lib/profile"
 
 	"github.com/docker/docker/client"
+	"github.com/radium-rtf/coderunner_checker/internal/config"
 	"github.com/radium-rtf/coderunner_checker/internal/domain"
 	"github.com/radium-rtf/coderunner_checker/pkg/api/checker/v1"
 )
@@ -21,7 +22,7 @@ type CheckerService struct {
 	rules  domain.Rules
 }
 
-func NewCheckerSrv(cfg domain.SandboxConfig) (*CheckerService, error) {
+func NewCheckerSrv(cfg config.SandboxConfig) (*CheckerService, error) {
 	libCfg := libConfig.NewConfig(
 		libConfig.WithUID(cfg.UUID),
 		libConfig.WithUser(cfg.User),
@@ -40,7 +41,37 @@ func NewCheckerSrv(cfg domain.SandboxConfig) (*CheckerService, error) {
 	return checker, nil
 }
 
-func (c *CheckerService) GetSandbox(req *checker.TestRequest) *domain.SandboxInfo {
+func (c *CheckerService) Close() error {
+	return c.client.Close()
+}
+
+func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*checker.TestCase) <-chan (*domain.TestResult) {
+	results := make(chan *domain.TestResult)
+
+	go func(ctx context.Context, req *checker.TestRequest, tests []*checker.TestCase, results chan *domain.TestResult) {
+		sandboxInfo := c.getSandboxInfo(req)
+
+		for i, test := range tests {
+			testInfo, err := c.runTest(ctx, sandboxInfo, test)
+
+			res := &domain.TestResult{
+				Info: testInfo,
+				Error:    err,
+				Number:   int64(i + 1),
+			}
+			results <- res
+
+			if err != nil || !testInfo.Success {
+				close(results)
+				break
+			}
+		}
+	}(ctx, req, tests, results)
+
+	return results
+}
+
+func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) *domain.SandboxInfo {
 	rule := c.rules[req.Lang]
 
 	profile := profile.NewProfile(
@@ -48,26 +79,24 @@ func (c *CheckerService) GetSandbox(req *checker.TestRequest) *domain.SandboxInf
 		profile.Image(rule.Image),
 	)
 
-	cmd := fmt.Sprintf(`cat %s | %s %s`, domain.InputFile, rule.Launch, rule.Filename)
-
 	limits := limit.NewLimits(
-		limit.WithTimeout(time.Duration(req.Timeout)*time.Second),
-		limit.WithMemoryInBytes(req.MemoryLimit),
+		limit.WithTimeout(req.Timeout.AsDuration()),
+		limit.WithMemoryInBytes(req.MemoryLimitBytes),
 	)
 
 	return &domain.SandboxInfo{
-		Profile:  profile,
-		Limits:   limits,
-		Cmd:      cmd,
-		Rule:     rule,
-		UserCode: req.UserCode,
-		Client:   c.client,
+		Profile: profile,
+		Limits:  limits,
+		Cmd:     rule.Launch,
+		Rule:    rule,
+		Code:    req.UserCode,
+		Client:  c.client,
 	}
 }
 
-func (c *CheckerService) RunTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *checker.TestCase) (*domain.TestInfo, error) {
+func (c *CheckerService) runTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *checker.TestCase) (*domain.TestInfo, error) {
 	files := []file.File{
-		file.NewFile(sandboxInfo.Rule.Filename, file.StringContent(sandboxInfo.UserCode)),
+		file.NewFile(sandboxInfo.Rule.Filename, file.StringContent(sandboxInfo.Code)),
 		file.NewFile(domain.InputFile, file.StringContent(test.Stdin)),
 	}
 
@@ -88,8 +117,9 @@ func (c *CheckerService) RunTest(ctx context.Context, sandboxInfo *domain.Sandbo
 	}
 
 	testInfo := &domain.TestInfo{
-		Info: resInfo,
-		Test: test,
+		Info:    resInfo,
+		Test:    test,
+		Success: resInfo.Status == info.StatusOK && resInfo.Logs.StdOut == test.Stdout,
 	}
 
 	return testInfo, nil
