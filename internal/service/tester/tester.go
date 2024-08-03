@@ -3,6 +3,7 @@ package tester
 import (
 	"context"
 	"fmt"
+	"github.com/radium-rtf/coderunner_checker/internal/config"
 	"time"
 
 	"github.com/radium-rtf/coderunner_checker/internal/domain"
@@ -19,11 +20,11 @@ type Tester struct {
 	cmd      string
 	userCode string
 	profile  profile.Profile
-	rule     domain.Rule
+	rule     config.Rule
 	client   *coderunner.Runner
 }
 
-func NewTester(client *coderunner.Runner, req *checker.TestRequest, rule domain.Rule) *Tester {
+func NewTester(client *coderunner.Runner, req *checker.TestRequest, rule config.Rule) *Tester {
 	profile := profile.NewProfile(
 		profile.Name(req.Lang),
 		profile.Image(rule.Image),

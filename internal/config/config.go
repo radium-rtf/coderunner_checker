@@ -1,4 +1,4 @@
-package domain
+package config
 
 type Config struct {
 	ServerConfig  `yaml:"server"`

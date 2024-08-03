@@ -1,4 +1,4 @@
-package checkerutils
+package api
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 // This func sets to res status and message with testInfo.
-func SetResponseInfo(res *checker.TestResponse, testInfo *domain.TestInfo, fullInfoWA bool) {
+func setResponseInfo(res *checker.TestResponse, testInfo *domain.TestInfo, fullInfoWA bool) {
 	if testInfo.Status == info.StatusOK && testInfo.Logs.StdOut == testInfo.Test.Stdout {
 		setResponseSuccess(res)
 		return

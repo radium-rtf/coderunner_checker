@@ -1,13 +1,12 @@
-package checker
+package api
 
 import (
 	"github.com/docker/docker/client"
+	"github.com/radium-rtf/coderunner_checker/internal/config"
 	coderunner "github.com/radium-rtf/coderunner_lib"
 	libConfig "github.com/radium-rtf/coderunner_lib/config"
 
-	"github.com/radium-rtf/coderunner_checker/internal/domain"
-	"github.com/radium-rtf/coderunner_checker/internal/tester"
-	checkerutils "github.com/radium-rtf/coderunner_checker/internal/utils/checker"
+	"github.com/radium-rtf/coderunner_checker/internal/service/tester"
 	"github.com/radium-rtf/coderunner_checker/pkg/api/checker/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,10 +17,10 @@ type Checker struct {
 	checker.UnimplementedCheckerServer
 
 	client *coderunner.Runner
-	rules  domain.Rules
+	rules  config.Rules
 }
 
-func NewChecker(cfg domain.SandboxConfig) (*Checker, error) {
+func NewChecker(cfg config.SandboxConfig) (*Checker, error) {
 	libCfg := libConfig.NewConfig(
 		libConfig.WithUID(cfg.UUID),
 		libConfig.WithUser(cfg.User),
@@ -53,7 +52,7 @@ func (c *Checker) Check(in *checker.ArrayTestsRequest, stream checker.Checker_Ch
 			Number:   int64(i + 1),
 			Duration: durationpb.New(testInfo.Time.Diff()),
 		}
-		checkerutils.SetResponseInfo(res, testInfo, in.Request.FullInfoWa)
+		setResponseInfo(res, testInfo, in.Request.FullInfoWa)
 
 		err = stream.Send(res)
 		if err != nil {

@@ -4,13 +4,12 @@ import (
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
-	"github.com/radium-rtf/coderunner_checker/internal/domain"
 )
 
 const configPath = "config/config.yaml"
 
-func Load() (*domain.Config, error) {
-	cfg := new(domain.Config)
+func Load() (*Config, error) {
+	cfg := new(Config)
 
 	path, ok := os.LookupEnv("CONFIG_PATH")
 	if !ok || path == "" {
