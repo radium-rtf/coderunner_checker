@@ -2,8 +2,13 @@ server:
   env: dev
   address: 8081
 
-sandox:
+sandbox:
   user: root
-  uuid: 0
+  uuid: 3456
   work_dir: /sandbox
   host: unix:///var/run/docker.sock
+  rules:
+    "python":
+      filename: main.py
+      image: python-coderunner:latest
+      launch: python3

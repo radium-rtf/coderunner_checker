@@ -36,8 +36,8 @@ func getConfig() *domain.Config {
 			Rules: domain.Rules{
 				"python": domain.Rule{
 					Filename: "main.py",
-					Image: "python",
-					Launch: "python3",
+					Image:    "python",
+					Launch:   "python3",
 				},
 			},
 		},

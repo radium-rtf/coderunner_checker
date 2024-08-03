@@ -26,8 +26,8 @@ type Rule struct {
 type Rules map[string]Rule // Key is programming language, value is struct with specified launch rules
 
 type SandboxConfig struct {
-	User    string `yaml:"env" env-required:"true"`
-	UUID    int    `yaml:"address" env-required:"true"`
+	User    string `yaml:"user" env-required:"true"`
+	UUID    int    `yaml:"uuid" env-required:"true"`
 	WorkDir string `yaml:"work_dir" env-required:"true"`
 	Host    string `yaml:"host" env-required:"true"`
 	Rules   Rules  `yaml:"rules" env-required:"true"`
