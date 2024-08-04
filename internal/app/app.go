@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -17,10 +18,10 @@ const (
 )
 
 type App struct {
-	Server *appgrpc.App
+	server *appgrpc.App
 }
 
-func New(cfg *config.Config) (*App, error) {
+func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	checkerSrv, err := checkersrv.NewCheckerSrv(cfg.Sandbox)
 	if err != nil {
 		return nil, err
@@ -28,13 +29,21 @@ func New(cfg *config.Config) (*App, error) {
 
 	logger := setupLogger(cfg.Env)
 
-	grpcApp := appgrpc.New(logger, cfg.Server, checkerSrv)
+	grpcApp := appgrpc.New(ctx, logger, cfg.Server, checkerSrv)
 
 	app := &App{
-		Server: grpcApp,
+		server: grpcApp,
 	}
 
 	return app, nil
+}
+
+func (a *App) Run() error {
+	return a.server.Run()
+}
+
+func (a *App) Wait() error {
+	return a.server.Wait()
 }
 
 func setupLogger(env string) *slog.Logger {

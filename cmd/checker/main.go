@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -12,28 +11,26 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	app, err := app.New(cfg)
+	app, err := app.New(ctx, cfg)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	go func() {
-		err = app.Server.Run(ctx)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}()
+	err = app.Run()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-
-	<-stop
-	cancel()
+	err = app.Wait()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

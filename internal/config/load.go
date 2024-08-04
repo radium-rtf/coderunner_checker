@@ -7,6 +7,8 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
+const configPath = "config/config.yaml"
+
 func Load() (*Config, error) {
 	cfg := new(Config)
 

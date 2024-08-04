@@ -35,15 +35,15 @@ func getResponseSuccess(result *domain.TestResult) *checker.TestResponse {
 			Text: "success",
 		},
 		Duration: durationpb.New(result.Info.Time.Diff()),
-		Number: result.Number,
+		Number:   result.Number,
 	}
 }
 
 func getResponseWA(result *domain.TestResult, fullInfoWA bool) *checker.TestResponse {
 	res := &checker.TestResponse{
-		Status: checker.Status_STATUS_WRONG_ANSWER,
+		Status:   checker.Status_STATUS_WRONG_ANSWER,
 		Duration: durationpb.New(result.Info.Time.Diff()),
-		Number: result.Number,
+		Number:   result.Number,
 	}
 
 	if fullInfoWA {
@@ -70,7 +70,7 @@ func getResponseUnknown(result *domain.TestResult) *checker.TestResponse {
 			Text: result.Info.Logs.StdErr,
 		},
 		Duration: durationpb.New(result.Info.Time.Diff()),
-		Number: result.Number,
+		Number:   result.Number,
 	}
 }
 
@@ -81,7 +81,7 @@ func getResponseTimeout(result *domain.TestResult) *checker.TestResponse {
 			Text: "time limit",
 		},
 		Duration: durationpb.New(result.Info.Time.Diff()),
-		Number: result.Number,
+		Number:   result.Number,
 	}
 }
 
@@ -92,6 +92,6 @@ func getResponseOOMKilled(result *domain.TestResult) *checker.TestResponse {
 			Text: "memory limit",
 		},
 		Duration: durationpb.New(result.Info.Time.Diff()),
-		Number: result.Number,
+		Number:   result.Number,
 	}
 }

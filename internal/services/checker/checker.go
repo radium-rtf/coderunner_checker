@@ -19,7 +19,7 @@ import (
 
 type CheckerService struct {
 	client *coderunner.Runner
-	rules  domain.Rules
+	rules  config.Rules
 }
 
 func NewCheckerSrv(cfg config.SandboxConfig) (*CheckerService, error) {
@@ -45,25 +45,26 @@ func (c *CheckerService) Close() error {
 	return c.client.Close()
 }
 
-func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*checker.ArrayTestsRequest_TestCase) <-chan (*domain.TestResult) {
+func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*checker.ArrayTestsRequest_TestCase) <-chan *domain.TestResult {
 	results := make(chan *domain.TestResult)
 
 	go func(ctx context.Context, req *checker.TestRequest, tests []*checker.ArrayTestsRequest_TestCase, results chan *domain.TestResult) {
+		defer close(results)
+
 		sandboxInfo := c.getSandboxInfo(req)
 
 		for i, test := range tests {
 			testInfo, err := c.runTest(ctx, sandboxInfo, test)
 
 			res := &domain.TestResult{
-				Info: testInfo,
-				Error:    err,
-				Number:   int64(i + 1),
+				Info:   testInfo,
+				Error:  err,
+				Number: int64(i + 1),
 			}
 			results <- res
 
 			if err != nil || !testInfo.Success {
-				close(results)
-				break
+				return
 			}
 		}
 	}(ctx, req, tests, results)

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"github.com/radium-rtf/coderunner_checker/internal/config"
 	coderunner "github.com/radium-rtf/coderunner_lib"
 	"github.com/radium-rtf/coderunner_lib/limit"
 	"github.com/radium-rtf/coderunner_lib/profile"
@@ -15,6 +16,6 @@ type SandboxInfo struct {
 	Cmd     string
 	Code    string
 	Profile profile.Profile
-	Rule    Rule
+	Rule    config.Rule
 	Client  *coderunner.Runner
 }

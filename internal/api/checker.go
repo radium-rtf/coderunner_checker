@@ -1,20 +1,29 @@
 package api
 
 import (
+	"context"
 	"github.com/radium-rtf/coderunner_checker/internal/domain"
 	"github.com/radium-rtf/coderunner_checker/pkg/api/checker/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"io"
 )
 
-type CheckerAPI struct {
-	checker.UnimplementedCheckerServer
+type (
+	CheckerSrv interface {
+		io.Closer
+		RunTests(context.Context, *checker.TestRequest, []*checker.ArrayTestsRequest_TestCase) <-chan *domain.TestResult
+	}
 
-	checkerSrv domain.CheckerSrv
-}
+	CheckerAPI struct {
+		checker.UnimplementedCheckerServer
 
-func RegisterChecker(server *grpc.Server, checkerSrv domain.CheckerSrv) {
+		checkerSrv CheckerSrv
+	}
+)
+
+func RegisterChecker(server grpc.ServiceRegistrar, checkerSrv CheckerSrv) {
 	checker.RegisterCheckerServer(server, &CheckerAPI{checkerSrv: checkerSrv})
 }
 
