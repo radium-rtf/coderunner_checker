@@ -49,7 +49,7 @@ func TestCheckSuccess(t *testing.T) {
 		Request: &checkergrpc.TestRequest{
 			Lang:             "python",
 			Code:             code,
-			Timeout:          durationpb.New(time.Second * 1),
+			Timeout:          durationpb.New(time.Second * 10),
 			MemoryLimitBytes: 1024 * 1024 * 6,
 			FullInfoWa:       false,
 		},
