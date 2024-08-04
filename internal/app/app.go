@@ -42,12 +42,10 @@ func setupLogger(env string) *slog.Logger {
 
 	switch env {
 	case localEnv:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+		log = slog.New(slog.Default().Handler())
 	case devEnv:
 		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 		)
 	case prodEnv:
 		log = slog.New(

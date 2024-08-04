@@ -28,7 +28,7 @@ type App struct {
 func New(log *slog.Logger, cfg config.ServerConfig, checkerSrv domain.CheckerSrv) *App {
 	loggingOpts := []logging.Option{
 		logging.WithLogOnEvents(
-			logging.StartCall, logging.FinishCall,
+			logging.PayloadSent, logging.PayloadReceived,
 		),
 	}
 
@@ -40,9 +40,9 @@ func New(log *slog.Logger, cfg config.ServerConfig, checkerSrv domain.CheckerSrv
 		}),
 	}
 
-	server := grpc.NewServer(grpc.ChainUnaryInterceptor(
-		recovery.UnaryServerInterceptor(recoveryOpts...),
-		logging.UnaryServerInterceptor(InterceptorLogger(log), loggingOpts...),
+	server := grpc.NewServer(grpc.ChainStreamInterceptor(
+		recovery.StreamServerInterceptor(recoveryOpts...),
+		logging.StreamServerInterceptor(InterceptorLogger(log), loggingOpts...),
 	))
 
 	api.RegisterChecker(server, checkerSrv)
@@ -70,7 +70,7 @@ func (a *App) Run(ctx context.Context) error {
 
 	go func(ctx context.Context) {
 		<-ctx.Done()
-		a.server.Stop()
+		a.server.GracefulStop()
 		l.Close()
 
 		for _, close := range a.toClose {
