@@ -45,10 +45,10 @@ func (c *CheckerService) Close() error {
 	return c.client.Close()
 }
 
-func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*checker.TestCase) <-chan (*domain.TestResult) {
+func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*checker.ArrayTestsRequest_TestCase) <-chan (*domain.TestResult) {
 	results := make(chan *domain.TestResult)
 
-	go func(ctx context.Context, req *checker.TestRequest, tests []*checker.TestCase, results chan *domain.TestResult) {
+	go func(ctx context.Context, req *checker.TestRequest, tests []*checker.ArrayTestsRequest_TestCase, results chan *domain.TestResult) {
 		sandboxInfo := c.getSandboxInfo(req)
 
 		for i, test := range tests {
@@ -89,12 +89,12 @@ func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) *domain.Sandbo
 		Limits:  limits,
 		Cmd:     rule.Launch,
 		Rule:    rule,
-		Code:    req.UserCode,
+		Code:    req.Code,
 		Client:  c.client,
 	}
 }
 
-func (c *CheckerService) runTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *checker.TestCase) (*domain.TestInfo, error) {
+func (c *CheckerService) runTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *checker.ArrayTestsRequest_TestCase) (*domain.TestInfo, error) {
 	files := []file.File{
 		file.NewFile(sandboxInfo.Rule.Filename, file.StringContent(sandboxInfo.Code)),
 		file.NewFile(domain.InputFile, file.StringContent(test.Stdin)),

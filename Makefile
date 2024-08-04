@@ -77,8 +77,11 @@ generate-proto:
 	mkdir -p pkg/$(ORDER_PROTO_PATH_OUT)
 	mkdir -p $(ORDER_DOCS_PATH)
 	protoc -I api/proto \
+		-I vendor.proto \
 		${ORDER_PROTO_PATH}/checker.proto \
 		--go_out=./pkg/$(ORDER_PROTO_PATH_OUT) --go_opt=paths=source_relative\
 		--go-grpc_out=./pkg/$(ORDER_PROTO_PATH_OUT) --go-grpc_opt=paths=source_relative \
+		--openapiv2_out=./$(ORDER_DOCS_PATH) \
+		--validate_out="lang=go,paths=source_relative:pkg/$(ORDER_PROTO_PATH_OUT)"
 
 do-all: bin-deps vendor-proto generate-proto

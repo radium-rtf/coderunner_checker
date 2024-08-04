@@ -6,7 +6,6 @@ option go_package = "coderunner_checker/pkg/grpc/checker;checker";
 
 import "google/protobuf/duration.proto";
 import "google/api/annotations.proto";
-import "google/api/field_behavior.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "validate/validate.proto";
 
@@ -18,26 +17,26 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 message TestRequest {
-  string lang = 1;
-  string user_code = 2;
-  google.protobuf.Duration timeout = 3;
-  int64 memory_limit_bytes = 4;
+  string lang = 1 [(validate.rules).string = {in: ["python"]}];
+  string code = 2 [(validate.rules).string.min_len = 1];
+  google.protobuf.Duration timeout = 3 [(validate.rules).duration = {gte: {}, lt:  {seconds: 30}}];
+  int64 memory_limit_bytes = 4 [(validate.rules).int64 = {gte: 6291456, lte: 268435456}];
   bool full_info_wa = 5;
 }
 
-message TestCase {
-  string stdin = 1;
-  string stdout = 2;
-}
-
 message ArrayTestsRequest {
-  repeated TestCase tests = 1;
-  TestRequest request = 2;
+  message TestCase {
+    string stdin = 1;
+    string stdout = 2;
+  }
+
+  repeated TestCase tests = 1 [(validate.rules).repeated.min_items = 1];
+  TestRequest request = 2 [(validate.rules).message.required = true];
 }
 
 message FileTestsRequest {
-  string url = 1;
-  TestRequest request = 2;
+  string url = 1 [(validate.rules).string.uri = true];
+  TestRequest request = 2 [(validate.rules).message.required = true];
 }
 
 enum Status {
@@ -55,10 +54,12 @@ message TestResponse {
     string expected = 3;
   }
 
-  Status status = 1;
-  int64 number = 2;
-  google.protobuf.Duration duration = 3;
+  Status status = 1 [(validate.rules).enum.defined_only = true];
+  int64 number = 2 [(validate.rules).int64.gte = 1];
+  google.protobuf.Duration duration = 3 [(validate.rules).duration.required = true];
   oneof message {
+    option (validate.required) = true;
+
     string text = 4;
     WrongAnswer wrong_answer = 5;
   }

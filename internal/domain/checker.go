@@ -8,5 +8,5 @@ import (
 
 type CheckerSrv interface {
 	Closer
-	RunTests(context.Context, *checker.TestRequest, []*checker.TestCase) <-chan *TestResult
+	RunTests(context.Context, *checker.TestRequest, []*checker.ArrayTestsRequest_TestCase) <-chan *TestResult
 }

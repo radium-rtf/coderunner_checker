@@ -9,6 +9,13 @@ import (
 	checkersrv "github.com/radium-rtf/coderunner_checker/internal/services/checker"
 )
 
+// possible env values
+const (
+	localEnv = "local"
+	devEnv   = "dev"
+	prodEnv  = "prod"
+)
+
 type App struct {
 	Server *appgrpc.App
 }
@@ -34,13 +41,15 @@ func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 
 	switch env {
-	case config.LocalEnv:
-		log = slog.New(slog.Default().Handler())
-	case config.DevEnv:
+	case localEnv:
+		log = slog.New(
+			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		)
+	case devEnv:
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
 		)
-	case config.ProdEnv:
+	case prodEnv:
 		log = slog.New(
 			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 		)

@@ -24,7 +24,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	// Gracefull shutdown
 	go func(cancel context.CancelFunc) {
 		stop := make(chan os.Signal, 1)
 		signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)

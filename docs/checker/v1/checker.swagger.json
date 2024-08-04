@@ -1,0 +1,236 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "radium checker",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "Checker"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/check": {
+      "post": {
+        "operationId": "Checker_Check",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/checkerTestResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of checkerTestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/checkerArrayTestsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Checker"
+        ]
+      }
+    },
+    "/v1/check-url": {
+      "post": {
+        "operationId": "Checker_CheckURL",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/checkerTestResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of checkerTestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/checkerFileTestsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Checker"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ArrayTestsRequestTestCase": {
+      "type": "object",
+      "properties": {
+        "stdin": {
+          "type": "string"
+        },
+        "stdout": {
+          "type": "string"
+        }
+      }
+    },
+    "TestResponseWrongAnswer": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string"
+        },
+        "actual": {
+          "type": "string"
+        },
+        "expected": {
+          "type": "string"
+        }
+      }
+    },
+    "checkerArrayTestsRequest": {
+      "type": "object",
+      "properties": {
+        "tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ArrayTestsRequestTestCase"
+          }
+        },
+        "request": {
+          "$ref": "#/definitions/checkerTestRequest"
+        }
+      }
+    },
+    "checkerFileTestsRequest": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/checkerTestRequest"
+        }
+      }
+    },
+    "checkerStatus": {
+      "type": "string",
+      "enum": [
+        "STATUS_UNKNOWN",
+        "STATUS_SUCCESS",
+        "STATUS_WRONG_ANSWER",
+        "STATUS_TIMEOUT",
+        "STATUS_OOM_KILLED"
+      ],
+      "default": "STATUS_UNKNOWN"
+    },
+    "checkerTestRequest": {
+      "type": "object",
+      "properties": {
+        "lang": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "string"
+        },
+        "memoryLimitBytes": {
+          "type": "string",
+          "format": "int64"
+        },
+        "fullInfoWa": {
+          "type": "boolean"
+        }
+      }
+    },
+    "checkerTestResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/checkerStatus"
+        },
+        "number": {
+          "type": "string",
+          "format": "int64"
+        },
+        "duration": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "wrongAnswer": {
+          "$ref": "#/definitions/TestResponseWrongAnswer"
+        }
+      }
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    }
+  }
+}

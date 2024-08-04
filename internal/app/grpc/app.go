@@ -28,7 +28,7 @@ type App struct {
 func New(log *slog.Logger, cfg config.ServerConfig, checkerSrv domain.CheckerSrv) *App {
 	loggingOpts := []logging.Option{
 		logging.WithLogOnEvents(
-			logging.PayloadReceived, logging.PayloadSent,
+			logging.StartCall, logging.FinishCall,
 		),
 	}
 
@@ -70,13 +70,16 @@ func (a *App) Run(ctx context.Context) error {
 
 	go func(ctx context.Context) {
 		<-ctx.Done()
-		a.server.GracefulStop()
+		a.server.Stop()
+		l.Close()
+
 		for _, close := range a.toClose {
 			err := close.Close()
 			if err != nil {
 				a.log.Error(err.Error())
 			}
 		}
+
 		a.log.Info("grpc server stopped")
 	}(ctx)
 

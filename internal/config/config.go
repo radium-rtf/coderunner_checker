@@ -2,13 +2,6 @@ package config
 
 import "github.com/radium-rtf/coderunner_checker/internal/domain"
 
-// possible env values
-const (
-	LocalEnv = "local"
-	DevEnv   = "dev"
-	ProdEnv  = "prod"
-)
-
 type Config struct {
 	Server  ServerConfig  `yaml:"server" env-required:"true"`
 	Sandbox SandboxConfig `yaml:"sandbox" env-required:"true"`

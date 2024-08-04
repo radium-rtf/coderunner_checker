@@ -7,7 +7,7 @@ import (
 
 type TestInfo struct {
 	info.Info
-	Test    *checker.TestCase
+	Test    *checker.ArrayTestsRequest_TestCase
 	Success bool
 }
 
