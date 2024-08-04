@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: app
+    ports:
+      - "8081:8081"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - hosts
+
+networks:
+  hosts:
