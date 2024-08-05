@@ -9,8 +9,14 @@ sandbox:
   work_dir: /sandbox
   host: unix:///var/run/docker.sock
   rules:
-    "python":
-      filename: main.py
-      image: python-coderunner:latest
-      launch: cat input.txt | python3 main.py
-
+    languages:
+      "python":
+        versions:
+          "3.12":
+            filename: main.py
+            image: python-coderunner:latest
+            launch: cat input.txt | python3 main.py
+          "3.11":
+            filename: main.py
+            image: python-coderunner:latest
+            launch: cat input.txt | python3 main.py

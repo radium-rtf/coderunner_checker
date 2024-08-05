@@ -15,7 +15,7 @@ import (
 type (
 	CheckerSrv interface {
 		io.Closer
-		RunTests(context.Context, *checker.TestRequest, []*domain.Test) <-chan *domain.TestResult
+		RunTests(context.Context, *checker.TestRequest, []*domain.Test) (<-chan *domain.TestResult, error)
 	}
 
 	CheckerAPI struct {
@@ -37,7 +37,10 @@ func (c *CheckerAPI) Check(in *checker.ArrayTestsRequest, stream checker.Checker
 
 	tests := getTestsDTO(in.Tests)
 
-	results := c.checkerSrv.RunTests(stream.Context(), in.Request, tests)
+	results, err := c.checkerSrv.RunTests(stream.Context(), in.Request, tests)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
 	for result := range results {
 		if result.Error != nil {
@@ -66,7 +69,10 @@ func (c *CheckerAPI) CheckURL(in *checker.FileTestsRequest, stream checker.Check
 		return status.Error(codes.InvalidArgument, fmt.Sprintf("bad file url: %v", err))
 	}
 
-	results := c.checkerSrv.RunTests(stream.Context(), in.Request, tests)
+	results, err := c.checkerSrv.RunTests(stream.Context(), in.Request, tests)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, err.Error())
+	}
 
 	for result := range results {
 		if result.Error != nil {

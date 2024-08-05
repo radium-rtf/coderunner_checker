@@ -68,6 +68,17 @@ func (m *TestRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if utf8.RuneCountInString(m.GetVersion()) < 1 {
+		err := TestRequestValidationError{
+			field:  "Version",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if utf8.RuneCountInString(m.GetCode()) < 1 {
 		err := TestRequestValidationError{
 			field:  "Code",

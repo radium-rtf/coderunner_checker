@@ -23,7 +23,13 @@ type Rule struct {
 	Launch   string `yaml:"launch" env-required:"true"`
 }
 
-type Rules map[string]Rule // Key is programming language, value is struct with specified launch rules
+type Std struct {
+	Versions map[string]Rule `yaml:"versions" env-required:"true"`
+}
+
+type Rules struct {
+	Languages map[string]Std `yaml:"languages" env-required:"true"`
+}
 
 type SandboxConfig struct {
 	User    string `yaml:"user" env-required:"true"`

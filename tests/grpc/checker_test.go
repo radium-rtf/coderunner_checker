@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"testing"
@@ -44,6 +45,7 @@ func TestCheckSuccess(t *testing.T) {
 
 	cfg, err := config.LoadFromPath(configPath)
 	require.NoError(t, err)
+	fmt.Println(cfg)
 
 	go runServer(ctx, cfg)
 
@@ -68,6 +70,7 @@ func TestCheckSuccess(t *testing.T) {
 				},
 				Request: &checkergrpc.TestRequest{
 					Lang:             "python",
+					Version:          "3.12",
 					Code:             code,
 					Timeout:          durationpb.New(time.Second * 10),
 					MemoryLimitBytes: 1024 * 1024 * 6,
@@ -127,6 +130,7 @@ func TestCheckURLSuccess(t *testing.T) {
 		Url: "http://localhost:8082/",
 		Request: &checkergrpc.TestRequest{
 			Lang:             "python",
+			Version:          "3.11",
 			Code:             code,
 			Timeout:          durationpb.New(time.Second * 10),
 			MemoryLimitBytes: 1024 * 1024 * 6,

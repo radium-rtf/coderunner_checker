@@ -168,6 +168,9 @@
         "lang": {
           "type": "string"
         },
+        "version": {
+          "type": "string"
+        },
         "code": {
           "type": "string"
         },

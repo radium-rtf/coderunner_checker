@@ -18,10 +18,11 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 message TestRequest {
   string lang = 1 [(validate.rules).string = {in: ["python"]}];
-  string code = 2 [(validate.rules).string.min_len = 1];
-  google.protobuf.Duration timeout = 3 [(validate.rules).duration = {gte: {}, lt:  {seconds: 30}}];
-  int64 memory_limit_bytes = 4 [(validate.rules).int64 = {gte: 6291456, lte: 268435456}];
-  bool full_info_wa = 5;
+  string version = 2 [(validate.rules).string.min_len = 1];
+  string code = 3 [(validate.rules).string.min_len = 1];
+  google.protobuf.Duration timeout = 4 [(validate.rules).duration = {gte: {}, lt:  {seconds: 30}}];
+  int64 memory_limit_bytes = 5 [(validate.rules).int64 = {gte: 6291456, lte: 268435456}];
+  bool full_info_wa = 6;
 }
 
 message ArrayTestsRequest {

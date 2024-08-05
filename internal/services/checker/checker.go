@@ -45,13 +45,16 @@ func (c *CheckerService) Close() error {
 	return c.client.Close()
 }
 
-func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*domain.Test) <-chan *domain.TestResult {
+func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*domain.Test) (<-chan *domain.TestResult, error) {
 	results := make(chan *domain.TestResult)
 
-	go func(ctx context.Context, req *checker.TestRequest, tests []*domain.Test, results chan *domain.TestResult) {
-		defer close(results)
+	sandboxInfo, err := c.getSandboxInfo(req)
+	if err != nil {
+		return nil, err
+	}
 
-		sandboxInfo := c.getSandboxInfo(req)
+	go func(ctx context.Context, sandboxInfo *domain.SandboxInfo, tests []*domain.Test, results chan *domain.TestResult) {
+		defer close(results)
 
 		for i, test := range tests {
 			testInfo, err := c.runTest(ctx, sandboxInfo, test)
@@ -67,13 +70,20 @@ func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest,
 				return
 			}
 		}
-	}(ctx, req, tests, results)
+	}(ctx, sandboxInfo, tests, results)
 
-	return results
+	return results, nil
 }
 
-func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) *domain.SandboxInfo {
-	rule := c.rules[req.Lang]
+func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) (*domain.SandboxInfo, error) {
+	lang, ok := c.rules.Languages[req.Lang]
+	if !ok {
+		return nil, fmt.Errorf("language %s is unsupport", req.Lang)
+	}
+	rule, ok := lang.Versions[req.Version]
+	if !ok {
+		return nil, fmt.Errorf("version %s %v is unsupport", req.Lang, req.Version)
+	}
 
 	profile := profile.NewProfile(
 		profile.Name(req.Lang),
@@ -85,7 +95,7 @@ func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) *domain.Sandbo
 		limit.WithMemoryInBytes(req.MemoryLimitBytes),
 	)
 
-	return &domain.SandboxInfo{
+	sandboxInfo := &domain.SandboxInfo{
 		Profile: profile,
 		Limits:  limits,
 		Cmd:     rule.Launch,
@@ -93,6 +103,8 @@ func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) *domain.Sandbo
 		Code:    req.Code,
 		Client:  c.client,
 	}
+
+	return sandboxInfo, nil
 }
 
 func (c *CheckerService) runTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *domain.Test) (*domain.TestInfo, error) {
