@@ -1,3 +1,7 @@
+.PHONY: .build-images
+build-images:
+	cd build && ./build.sh
+
 # proto
 # Используем bin в текущей директории для установки плагинов protoc
 LOCAL_BIN:=$(CURDIR)/bin
