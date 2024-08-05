@@ -4,12 +4,10 @@ package checker;
 
 option go_package = "coderunner_checker/pkg/grpc/checker;checker";
 
+import "google/protobuf/duration.proto";
 import "google/api/annotations.proto";
-import "google/api/field_behavior.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "validate/validate.proto";
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/empty.proto";
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
@@ -18,6 +16,67 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   }
 };
 
-service Checker {
+message TestRequest {
+  string lang = 1 [(validate.rules).string = {in: ["python"]}];
+  string version = 2 [(validate.rules).string.min_len = 1];
+  string code = 3 [(validate.rules).string.min_len = 1];
+  google.protobuf.Duration timeout = 4 [(validate.rules).duration = {gte: {}, lt:  {seconds: 30}}];
+  int64 memory_limit_bytes = 5 [(validate.rules).int64 = {gte: 6291456, lte: 268435456}];
+  bool full_info_wa = 6;
+}
 
+message ArrayTestsRequest {
+  message TestCase {
+    string stdin = 1;
+    string stdout = 2;
+  }
+
+  repeated TestCase tests = 1 [(validate.rules).repeated.min_items = 1];
+  TestRequest request = 2 [(validate.rules).message.required = true];
+}
+
+message FileTestsRequest {
+  string url = 1 [(validate.rules).string.uri = true];
+  TestRequest request = 2 [(validate.rules).message.required = true];
+}
+
+enum Status {
+  STATUS_UNKNOWN = 0;
+  STATUS_SUCCESS = 1;
+  STATUS_WRONG_ANSWER = 2;
+  STATUS_TIMEOUT = 3;
+  STATUS_OOM_KILLED = 4;
+}
+
+message TestResponse {
+  message WrongAnswer {
+    string input = 1;
+    string actual = 2;
+    string expected = 3;
+  }
+
+  Status status = 1 [(validate.rules).enum.defined_only = true];
+  int64 number = 2 [(validate.rules).int64.gte = 1];
+  google.protobuf.Duration duration = 3 [(validate.rules).duration.required = true];
+  oneof message {
+    option (validate.required) = true;
+
+    string text = 4;
+    WrongAnswer wrong_answer = 5;
+  }
+}
+
+service Checker {
+  rpc Check(ArrayTestsRequest) returns (stream TestResponse) {
+    option (google.api.http) = {
+      post: "/v1/check"
+      body: "*"
+    };
+  };
+  rpc CheckURL(FileTestsRequest) returns (stream TestResponse) {
+    option (google.api.http) = {
+      post: "/v1/check-url"
+      body: "*"
+    };
+  };
 }

@@ -1,0 +1,22 @@
+env: local
+
+server:
+  address: :8081
+
+sandbox:
+  user: sandbox
+  uuid: 3456
+  work_dir: /sandbox
+  host: unix:///var/run/docker.sock
+  rules:
+    languages:
+      "python":
+        versions:
+          "3.12":
+            filename: main.py
+            image: python-coderunner:latest
+            launch: cat input.txt | python3 main.py
+          "3.11":
+            filename: main.py
+            image: python-coderunner:latest
+            launch: cat input.txt | python3 main.py

@@ -1,0 +1,139 @@
+package checkersrv
+
+import (
+	"context"
+	"fmt"
+
+	coderunner "github.com/radium-rtf/coderunner_lib"
+	libConfig "github.com/radium-rtf/coderunner_lib/config"
+	"github.com/radium-rtf/coderunner_lib/file"
+	"github.com/radium-rtf/coderunner_lib/info"
+	"github.com/radium-rtf/coderunner_lib/limit"
+	"github.com/radium-rtf/coderunner_lib/profile"
+
+	"github.com/docker/docker/client"
+	"github.com/radium-rtf/coderunner_checker/internal/config"
+	"github.com/radium-rtf/coderunner_checker/internal/domain"
+	"github.com/radium-rtf/coderunner_checker/pkg/api/checker/v1"
+)
+
+type CheckerService struct {
+	client *coderunner.Runner
+	rules  config.Rules
+}
+
+func NewCheckerSrv(cfg config.SandboxConfig) (*CheckerService, error) {
+	libCfg := libConfig.NewConfig(
+		libConfig.WithUID(cfg.UUID),
+		libConfig.WithUser(cfg.User),
+		libConfig.WithWorkDir(cfg.WorkDir),
+	)
+
+	client, err := coderunner.NewRunner(libCfg, client.WithHost(cfg.Host))
+	if err != nil {
+		return nil, err
+	}
+
+	checker := &CheckerService{
+		client: client,
+		rules:  cfg.Rules,
+	}
+	return checker, nil
+}
+
+func (c *CheckerService) Close() error {
+	return c.client.Close()
+}
+
+func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*domain.Test) (<-chan *domain.TestResult, error) {
+	results := make(chan *domain.TestResult)
+
+	sandboxInfo, err := c.getSandboxInfo(req)
+	if err != nil {
+		return nil, err
+	}
+
+	go func(ctx context.Context, sandboxInfo *domain.SandboxInfo, tests []*domain.Test, results chan *domain.TestResult) {
+		defer close(results)
+
+		for i, test := range tests {
+			testInfo, err := c.runTest(ctx, sandboxInfo, test)
+
+			res := &domain.TestResult{
+				Info:   testInfo,
+				Error:  err,
+				Number: int64(i + 1),
+			}
+			results <- res
+
+			if err != nil || !testInfo.Success {
+				return
+			}
+		}
+	}(ctx, sandboxInfo, tests, results)
+
+	return results, nil
+}
+
+func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) (*domain.SandboxInfo, error) {
+	lang, ok := c.rules.Languages[req.Lang]
+	if !ok {
+		return nil, fmt.Errorf("language %s is unsupport", req.Lang)
+	}
+	rule, ok := lang.Versions[req.Version]
+	if !ok {
+		return nil, fmt.Errorf("version %s %v is unsupport", req.Lang, req.Version)
+	}
+
+	profile := profile.NewProfile(
+		profile.Name(req.Lang),
+		profile.Image(rule.Image),
+	)
+
+	limits := limit.NewLimits(
+		limit.WithTimeout(req.Timeout.AsDuration()),
+		limit.WithMemoryInBytes(req.MemoryLimitBytes),
+	)
+
+	sandboxInfo := &domain.SandboxInfo{
+		Profile: profile,
+		Limits:  limits,
+		Cmd:     rule.Launch,
+		Rule:    rule,
+		Code:    req.Code,
+		Client:  c.client,
+	}
+
+	return sandboxInfo, nil
+}
+
+func (c *CheckerService) runTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *domain.Test) (*domain.TestInfo, error) {
+	files := []file.File{
+		file.NewFile(sandboxInfo.Rule.Filename, file.StringContent(sandboxInfo.Code)),
+		file.NewFile(domain.InputFile, file.StringContent(test.Stdin)),
+	}
+
+	sandbox, err := c.client.NewSandbox(ctx, sandboxInfo.Cmd, sandboxInfo.Profile, sandboxInfo.Limits, files)
+	if err != nil {
+		return nil, fmt.Errorf("cant create container: %v", err)
+	}
+	defer sandbox.Close()
+
+	err = sandbox.Start()
+	if err != nil {
+		return nil, fmt.Errorf("cant start container: %v", err)
+	}
+
+	resInfo, err := sandbox.Info()
+	if err != nil {
+		return nil, fmt.Errorf("cant get result: %v", err)
+	}
+
+	testInfo := &domain.TestInfo{
+		Info:    resInfo,
+		Test:    test,
+		Success: resInfo.Status == info.StatusOK && resInfo.Logs.StdOut == test.Stdout,
+	}
+
+	return testInfo, nil
+}

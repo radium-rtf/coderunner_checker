@@ -1,9 +1,13 @@
+.PHONY: .build-images
+build-images:
+	cd build && ./build.sh
+
 # proto
 # Используем bin в текущей директории для установки плагинов protoc
 LOCAL_BIN:=$(CURDIR)/bin
 
 # Добавляем bin в текущей директории в PATH при запуске protoc
-PROTOC = PATH="$$PATH:$(LOCAL_BIN)" protoc
+#PROTOC = PATH="$$PATH:$(LOCAL_BIN)" protoc
 
 ORDER_PROTO_PATH:=api/proto/checker/v1
 ORDER_PROTO_PATH_OUT:=api
@@ -73,16 +77,15 @@ vendor-proto/validate:
 		rm -rf vendor.proto/tmp
 
 .PHONY: generate-proto
-generate-proto: bin-deps vendor-proto
+generate-proto:
 	mkdir -p pkg/$(ORDER_PROTO_PATH_OUT)
 	mkdir -p $(ORDER_DOCS_PATH)
 	protoc -I api/proto \
 		-I vendor.proto \
 		${ORDER_PROTO_PATH}/checker.proto \
-		--plugin=protoc-gen-go=$(LOCAL_BIN)/protoc-gen-go --go_out=./pkg/$(ORDER_PROTO_PATH_OUT) --go_opt=paths=source_relative\
-		--plugin=protoc-gen-go-grpc=$(LOCAL_BIN)/protoc-gen-go-grpc --go-grpc_out=./pkg/$(ORDER_PROTO_PATH_OUT) --go-grpc_opt=paths=source_relative \
-		--plugin=protoc-gen-grpc-gateway=$(LOCAL_BIN)/protoc-gen-grpc-gateway --grpc-gateway_out ./pkg/$(ORDER_PROTO_PATH_OUT)  --grpc-gateway_opt  paths=source_relative --grpc-gateway_opt generate_unbound_methods=true \
-		--plugin=protoc-gen-openapiv2=$(LOCAL_BIN)/protoc-gen-openapiv2 --openapiv2_out=./$(ORDER_DOCS_PATH) \
-		--plugin=protoc-gen-validate=$(LOCAL_BIN)/protoc-gen-validate --validate_out="lang=go,paths=source_relative:pkg/$(ORDER_PROTO_PATH_OUT)"
+		--go_out=./pkg/$(ORDER_PROTO_PATH_OUT) --go_opt=paths=source_relative\
+		--go-grpc_out=./pkg/$(ORDER_PROTO_PATH_OUT) --go-grpc_opt=paths=source_relative \
+		--openapiv2_out=./$(ORDER_DOCS_PATH) \
+		--validate_out="lang=go,paths=source_relative:pkg/$(ORDER_PROTO_PATH_OUT)"
 
-
+do-all: bin-deps vendor-proto generate-proto
