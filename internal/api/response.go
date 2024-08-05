@@ -89,7 +89,7 @@ func getResponseOOMKilled(result *domain.TestResult) *checker.TestResponse {
 	return &checker.TestResponse{
 		Status: checker.Status_STATUS_OOM_KILLED,
 		Message: &checker.TestResponse_Text{
-			Text: "memory limit",
+			Text: "oom killed",
 		},
 		Duration: durationpb.New(result.Info.Time.Diff()),
 		Number:   result.Number,

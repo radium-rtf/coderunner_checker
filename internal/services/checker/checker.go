@@ -45,10 +45,10 @@ func (c *CheckerService) Close() error {
 	return c.client.Close()
 }
 
-func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*checker.ArrayTestsRequest_TestCase) <-chan *domain.TestResult {
+func (c *CheckerService) RunTests(ctx context.Context, req *checker.TestRequest, tests []*domain.Test) <-chan *domain.TestResult {
 	results := make(chan *domain.TestResult)
 
-	go func(ctx context.Context, req *checker.TestRequest, tests []*checker.ArrayTestsRequest_TestCase, results chan *domain.TestResult) {
+	go func(ctx context.Context, req *checker.TestRequest, tests []*domain.Test, results chan *domain.TestResult) {
 		defer close(results)
 
 		sandboxInfo := c.getSandboxInfo(req)
@@ -95,7 +95,7 @@ func (c *CheckerService) getSandboxInfo(req *checker.TestRequest) *domain.Sandbo
 	}
 }
 
-func (c *CheckerService) runTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *checker.ArrayTestsRequest_TestCase) (*domain.TestInfo, error) {
+func (c *CheckerService) runTest(ctx context.Context, sandboxInfo *domain.SandboxInfo, test *domain.Test) (*domain.TestInfo, error) {
 	files := []file.File{
 		file.NewFile(sandboxInfo.Rule.Filename, file.StringContent(sandboxInfo.Code)),
 		file.NewFile(domain.InputFile, file.StringContent(test.Stdin)),
