@@ -11,6 +11,6 @@ sandbox:
   rules:
     "python":
       filename: main.py
-      image: python-coderunner:latest
+      image: python-coderunner:3.12.3
       launch: cat input.txt | python3 main.py
 
